@@ -13,9 +13,9 @@ Game::Game()
 	m_pWindow = NULL;
 	m_pRenderer = NULL;
 	m_bRunning = false;
-	m_score = 0;	
+	m_score = 0;
+	m_hiscore = 0;	
 	
-	newlevel();
 }
 
 void Game::newlevel()
@@ -23,6 +23,9 @@ void Game::newlevel()
 	for (int r=0;r<6;r++)
 		for (int c=0;c<25;c++)
 			m_wall[r][c] = 1;
+	
+	m_lives++;
+	m_pBall->start();
 }
 bool Game::init(const char* title, int xpos, int ypos, int width, int height, int flags)
 {
@@ -30,6 +33,8 @@ bool Game::init(const char* title, int xpos, int ypos, int width, int height, in
 	if(SDL_Init(SDL_INIT_EVERYTHING) == 0)
 	{
 		printf("SDL init success\n");
+		
+		SDL_ShowCursor(SDL_DISABLE); 
 		
 		// init the window
 		m_pWindow = SDL_CreateWindow(title, xpos, ypos, width, height, flags);
@@ -90,7 +95,6 @@ bool Game::init(const char* title, int xpos, int ypos, int width, int height, in
 
     srand( SDL_GetTicks() );
     m_state = __BEGIN__;
-    m_lives = 3;
     
 	printf("init completed\n");
 	m_bRunning = true; // everything inited successfully, start the main loop
@@ -108,15 +112,19 @@ void Game::render()
 	
 	if (m_state == __BEGIN__)
 	{
-		// Score
-		Charset::Instance()->print("Breakout",120,200,m_pRenderer,6);	
-		Charset::Instance()->print("Press enter to Start",150,300,m_pRenderer,2);	
+		// Startup
+		char s[64];
+		sprintf(s,"S:%05d      L:%d   HI:%05d",m_score,m_lives,m_hiscore);
+		std::string str(s);
+		Charset::Instance()->print(s,100,10,m_pRenderer,2);
+		Charset::Instance()->print("Game Over",120,200,m_pRenderer,6);	
+		Charset::Instance()->print("Press Enter to Start",150,300,m_pRenderer,2);	
 	}
 	else
 	{
 		// Score
-		char s[16];
-		sprintf(s,"%05d      L:%d",m_score,m_lives);
+		char s[64];
+		sprintf(s,"S:%05d      L:%d   HI:%05d",m_score,m_lives,m_hiscore);
 		std::string str(s);
 		Charset::Instance()->print(s,100,10,m_pRenderer,2);
 		
@@ -190,13 +198,16 @@ void Game::update()
 {
 	int update = m_pBall->update();
 	
+	// No game update at begin state
+	if (m_state == __BEGIN__) return;
+	
 	if (update == 1)
 	{
 		// Player collision detection
 		if ((m_pBall->getX() > (m_pPlayer->getX()-BALL_WIDTH)) && (m_pBall->getX() <= (m_pPlayer->getX()+PLAYER_WIDTH)))
 		{
 			m_pBall->bounce();
-			m_bounce_cnt = (m_bounce_cnt+1) % 20;
+			m_bounce_cnt = (m_bounce_cnt+1) % BOUNCE_SPEEDUP;
 			
 			if (m_bounce_cnt == 0)
 				m_pBall->speedup();
@@ -208,14 +219,17 @@ void Game::update()
 		m_lives--;
 		if (m_lives == 0)
 			m_state = __BEGIN__;
-			
-		m_pBall->start();
+		else
+			m_pBall->start();
 	}	
 	else if (collision())
 	{
 		// Bricks collision detection
+		m_score += 5;
+		if (m_score > m_hiscore)
+			m_hiscore = m_score;
 		m_pBall->bounce();	
-		m_bounce_cnt = (m_bounce_cnt+1) % 20;
+		m_bounce_cnt = (m_bounce_cnt+1) % BOUNCE_SPEEDUP;
 		
 		if (m_bounce_cnt == 0)
 		{
@@ -267,14 +281,12 @@ int Game::collision()
 	if (m_wall[r][c_left] == 1)
 	{
 		m_wall[r][c_left] = 0;
-		m_score += 5;
 		return 1;
 	}
 
 	if (m_wall[r][c_right] == 1)
 	{
 		m_wall[r][c_right] = 0;
-		m_score += 5;
 		return 1;
 	}
 		
@@ -301,6 +313,8 @@ void Game::handleEvents()
 				if (event.key.keysym.sym == 13 && m_state == __BEGIN__)
 				{
 					m_state = __INGAME__;
+					newlevel();
+					m_score = 0;
 					m_lives = 3;
 				}
 						
@@ -324,6 +338,7 @@ void Game::onMousePress(SDL_Event& event)
 	{
     	//handle a left-click
     	m_pBall->move();
+    	m_bounce_cnt = 0;
 	}
 }
 

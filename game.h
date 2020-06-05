@@ -31,6 +31,7 @@ class Game
 		bool m_bRunning;
 		int m_currentFrame;
 		int m_score;
+		int m_hiscore;
 		
 		// Specific variables
 		int m_wall[6][25];

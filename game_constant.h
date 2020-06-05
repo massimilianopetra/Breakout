@@ -7,5 +7,6 @@
 #define PLAYER_X 320
 #define BALL_WIDTH 8
 #define BALL_HEIGHT 8
+#define BOUNCE_SPEEDUP 23
 
 #endif

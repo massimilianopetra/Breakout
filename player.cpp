@@ -57,6 +57,20 @@ void Ball::speedup()
 		m_yvelocity++;
 	else
 		m_yvelocity--;
+
+	// Speed limit
+			
+	if (m_xvelocity > 5)
+		m_xvelocity = 5;
+
+	if (m_xvelocity < -5)
+		m_xvelocity = -5;
+
+	if (m_yvelocity > 5)
+		m_yvelocity = 5;
+
+	if (m_yvelocity < -5)
+		m_yvelocity = -5;
 }
 
 int Ball::update()
@@ -79,22 +93,30 @@ int Ball::update()
 		m_xvelocity = -m_xvelocity;	
 	}	
 	
-	if (m_y < 50)
+	if (m_yvelocity <0)
 	{
+		if (m_y < 50)
+		{
 		// Top bounce
 		m_y = 50;
 		m_yvelocity = -m_yvelocity;	
+		}
 	}
-	else if (((m_y+m_width) >= PLAYER_Y) && (m_y < (PLAYER_Y+PLAYER_HEIGHT)))
+	else
 	{
-		// In player range
-		return 1;	
+		if (((m_y+m_width) >= PLAYER_Y) && (m_y < (PLAYER_Y+PLAYER_HEIGHT)))
+		{
+			// In player range
+			return 1;	
+		}
+		else if (m_y >= (PLAYER_Y+PLAYER_HEIGHT))
+		{
+			// Out of playfield
+			return 2;
+		}		
 	}
-	else if (m_y >= (PLAYER_Y+PLAYER_HEIGHT))
-	{
-		// Out of playfield
-		return 2;
-	}
+
+
 	
 	return 0;
 }
